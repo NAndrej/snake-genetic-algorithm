@@ -4,7 +4,8 @@ Made with PyGame
 """
 
 import pygame, sys, time, random
-
+from Brain import Brain
+from Population import Population
 
 # Difficulty settings
 # Easy      ->  10
@@ -18,21 +19,24 @@ difficulty = 25
 frame_size_x = 400
 frame_size_y = 400
 
+
 # Checks for errors encountered
-check_errors = pygame.init()
-# pygame.init() example output -> (6, 0)
-# second number in tuple gives number of errors
-if check_errors[1] > 0:
-    print(f'[!] Had {check_errors[1]} errors when initialising game, exiting...')
-    sys.exit(-1)
-else:
-    print('[+] Game successfully initialised')
+def initialize_environment():
+    check_errors = pygame.init()
+    # pygame.init() example output -> (6, 0)
+    # second number in tuple gives number of errors
+    if check_errors[1] > 0:
+        print(f'[!] Had {check_errors[1]} errors when initialising game, exiting...')
+        sys.exit(-1)
 
+    global game_window
+    global fps_controller
+    # Initialise game window
+    pygame.display.set_caption('Snake Eater')
+    game_window = pygame.display.set_mode((frame_size_x, frame_size_y))
 
-# Initialise game window
-pygame.display.set_caption('Snake Eater')
-game_window = pygame.display.set_mode((frame_size_x, frame_size_y))
-
+    # FPS (frames per second) controller
+    fps_controller = pygame.time.Clock()
 
 # Colors (R, G, B)
 black = pygame.Color(0, 0, 0)
@@ -41,33 +45,14 @@ red = pygame.Color(255, 0, 0)
 green = pygame.Color(0, 255, 0)
 blue = pygame.Color(0, 0, 255)
 
-
-# FPS (frames per second) controller
-fps_controller = pygame.time.Clock()
-
-
-# Game variables
-snake_box_size = 40
-snake_head = [frame_size_x / 2, frame_size_y / 2]
-snake_body = [
-    [frame_size_x / 2, frame_size_y / 2],
-    [(frame_size_x / 2) - snake_box_size, (frame_size_y / 2)],
-    [(frame_size_x / 2) - 2 * snake_box_size, (frame_size_y / 2)]
-]
-
-food_pos = [random.randrange(1, (frame_size_x//snake_box_size)) * snake_box_size, random.randrange(1, (frame_size_y//snake_box_size)) * snake_box_size]
-food_spawn = True
-
-direction = 'RIGHT'
-change_to = direction
-
-score = 0
-
+# Genetic algorithm variables
+number_generations = 10
+population_size = 3
 
 # Game Over
 def game_over():
     my_font = pygame.font.SysFont('times new roman', 90)
-    game_over_surface = my_font.render('YOU DIED', True, red)
+    game_over_surface = my_font.render('The generation has entirely died', True, red)
     game_over_rect = game_over_surface.get_rect()
     game_over_rect.midtop = (frame_size_x/2, frame_size_y/4)
     game_window.fill(black)
@@ -80,96 +65,69 @@ def game_over():
 
 
 # Score
-def show_score(choice, color, font, size):
+def show_score(choice, color, font, size, score, generation_number):
     score_font = pygame.font.SysFont(font, size)
+
     score_surface = score_font.render('Score : ' + str(score), True, color)
+    gen_number_surface = score_font.render('Generation : ' + str(generation_number), True, color)
+
     score_rect = score_surface.get_rect()
+    gen_rect = gen_number_surface.get_rect()
     if choice == 1:
-        score_rect.midtop = (frame_size_x/10, 15)
+        score_rect.midtop = (frame_size_x / 10, 15)
+        gen_rect.midtop = (frame_size_x - 60, 15)
     else:
-        score_rect.midtop = (frame_size_x/2, frame_size_y/1.25)
+        score_rect.midtop = (frame_size_x / 2, frame_size_y/1.25)
+        gen_rect.midtop = (frame_size_x / 2, frame_size_y / 1.25)
+
     game_window.blit(score_surface, score_rect)
+    game_window.blit(gen_number_surface, gen_rect)
+
     # pygame.display.flip()
 
 
 # Main logic
-while True:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
-        # Whenever a key is pressed down
-        elif event.type == pygame.KEYDOWN:
-            # W -> Up; S -> Down; A -> Left; D -> Right
-            if event.key == pygame.K_UP or event.key == ord('w'):
-                change_to = 'UP'
-            if event.key == pygame.K_DOWN or event.key == ord('s'):
-                change_to = 'DOWN'
-            if event.key == pygame.K_LEFT or event.key == ord('a'):
-                change_to = 'LEFT'
-            if event.key == pygame.K_RIGHT or event.key == ord('d'):
-                change_to = 'RIGHT'
-            # Esc -> Create event to quit the game
-            if event.key == pygame.K_ESCAPE:
-                pygame.event.post(pygame.event.Event(pygame.QUIT))
+for gen_number in range(number_generations):
+    initialize_environment()
+    population = Population(population_size)
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
 
-    # Making sure the snake cannot move in the opposite direction instantaneously
-    if change_to == 'UP' and direction != 'DOWN':
-        direction = 'UP'
-    if change_to == 'DOWN' and direction != 'UP':
-        direction = 'DOWN'
-    if change_to == 'LEFT' and direction != 'RIGHT':
-        direction = 'LEFT'
-    if change_to == 'RIGHT' and direction != 'LEFT':
-        direction = 'RIGHT'
+            # if event.type == pygame.K_ESCAPE:
+            #     pygame.event.post(pygame.event.Event(pygame.QUIT))
 
-    # Moving the snake
-    if direction == 'UP':
-        snake_head[1] -= snake_box_size
-    if direction == 'DOWN':
-        snake_head[1] += snake_box_size
-    if direction == 'LEFT':
-        snake_head[0] -= snake_box_size
-    if direction == 'RIGHT':
-        snake_head[0] += snake_box_size
+        # population.move_snakes()
+        # population.grow_snakes()
+        population.exec_snake_functions()
+        # GFX
+        game_window.fill(black)
 
-    # Snake body growing mechanism
-    snake_body.insert(0, list(snake_head))
-    if snake_head[0] == food_pos[0] and snake_head[1] == food_pos[1]:
-        score += 1
-        food_spawn = False
-    else:
-        snake_body.pop()
+        for snake in population.snakes:
+            for pos in snake.snake_body:
+            # Snake body
+            # .draw.rect(play_surface, color, xy-coordinate)
+            # xy-coordinate -> .Rect(x, y, size_x, size_y)
+                pygame.draw.rect(game_window, green, pygame.Rect(pos[0], pos[1], snake.snake_box_size, snake.snake_box_size))
 
-    # Spawning food on the screen
-    if not food_spawn:
-        food_pos = [random.randrange(1, (frame_size_x//10)) * 10, random.randrange(1, (frame_size_y//10)) * 10]
-    food_spawn = True
+        # Snake food
+        for snake in population.snakes:
+            pygame.draw.rect(game_window, white, pygame.Rect(snake.food_pos[0], snake.food_pos[1], snake.snake_box_size, snake.snake_box_size))
 
-    # GFX
-    game_window.fill(black)
-    for pos in snake_body:
-        # Snake body
-        # .draw.rect(play_surface, color, xy-coordinate)
-        # xy-coordinate -> .Rect(x, y, size_x, size_y)
-        pygame.draw.rect(game_window, green, pygame.Rect(pos[0], pos[1], 10, 10))
+        if population.is_dead():
+            break
+        # Game Over conditions
+        # Getting out of bounds
+        # if snake_head[0] < 0 or snake_head[0] > frame_size_x-10:
+        #     game_over()
+        # if snake_head[1] < 0 or snake_head[1] > frame_size_y-10:
+        #     game_over()
+        # Touching the snake body
 
-    # Snake food
-    pygame.draw.rect(game_window, white, pygame.Rect(food_pos[0], food_pos[1], 10, 10))
-
-    # Game Over conditions
-    # Getting out of bounds
-    if snake_head[0] < 0 or snake_head[0] > frame_size_x-10:
-        game_over()
-    if snake_head[1] < 0 or snake_head[1] > frame_size_y-10:
-        game_over()
-    # Touching the snake body
-    for block in snake_body[1:]:
-        if snake_head[0] == block[0] and snake_head[1] == block[1]:
-            game_over()
-
-    show_score(1, white, 'consolas', 20)
-    # Refresh game screen
-    pygame.display.update()
-    # Refresh rate
-    fps_controller.tick(difficulty)
+        show_score(1, white, 'consolas', 20, max([snake.score for snake in population.snakes]), gen_number)
+        # Refresh game screen
+        pygame.display.update()
+        # Refresh rate
+        fps_controller.tick(difficulty)
