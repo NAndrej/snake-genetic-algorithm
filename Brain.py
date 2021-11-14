@@ -19,6 +19,8 @@ class Brain:
         self.build_model()
 
     def build_model(self):
+        """Builds the model for generating directions
+        """
         self.model = Sequential([
             Dense(self.input_size, activation = "relu", input_shape=(self.input_size,)),
             Dense(self.hidden_layer_size, activation = "relu"),
@@ -30,6 +32,11 @@ class Brain:
         self.model.build()
         
     def set_weights(self, weights):
+        """Sets the model weights to the given ones
+
+        Args:
+            weights ([array]): [Weights that will replace the ones in this model]
+        """
         if len(self.model.layers) != len(weights):
             print("ERROR: Weight mismatch")
             return
@@ -42,10 +49,25 @@ class Brain:
             l.set_weights(weight)
 
     def get_movement(self, X):
+        """Gets a prediction from the model.
+
+        Args:
+            X ([array]): [State of the snake]
+
+        Returns:
+            [int]: [Predicted direction of the snake]
+        """
+
+        # TODO: Please define which integer output maps to which string direction
         prediction = np.argmax(self.model.predict(X), axis=-1)[0]
         return prediction
         
     def get_weights(self):
+        """Gets the weights from the model
+
+        Returns:
+            [dict]: [Weights for each model layer]
+        """
         dict_ = {}
         for i, layer in enumerate(self.model.layers):
             dict_[i] = layer.get_weights()[0]

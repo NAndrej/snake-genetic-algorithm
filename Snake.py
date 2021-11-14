@@ -18,6 +18,8 @@ class Snake:
         self.score = 0
 
     def move(self):
+        """Moves the snake in the direction based on the output from the Brain.
+        """
         change_to = random.choice(['UP', 'DOWN', 'LEFT', 'DOWN'])
 
         if self.is_dead():
@@ -44,6 +46,8 @@ class Snake:
             self.snake_head[0] += self.snake_box_size
 
     def grow(self):
+        """Checks whether the snake ate its apple. If yes, the snake grows accordingly.
+        """
         self.snake_body.insert(0, list(self.snake_head))
         if self.snake_head[0] == self.food_pos[0] and self.snake_head[1] == self.food_pos[1]:
             self.score += 1
@@ -57,6 +61,11 @@ class Snake:
         self.food_spawn = True
 
     def is_dead(self):
+        """Checks whether the snake is dead or not.
+
+        Returns:
+            bool: [Is this snake dead?]
+        """
         if (self.snake_head[0] < 0 or self.snake_head[0] > self.frame_size_x - self.snake_box_size) or (self.snake_head[1] < 0 or self.snake_head[1] > self.frame_size_y - self.snake_box_size):
             return True
         for block in self.snake_body[1:]:
