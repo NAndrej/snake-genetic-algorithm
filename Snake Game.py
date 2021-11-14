@@ -15,8 +15,8 @@ import pygame, sys, time, random
 difficulty = 25
 
 # Window size
-frame_size_x = 720
-frame_size_y = 480
+frame_size_x = 400
+frame_size_y = 400
 
 # Checks for errors encountered
 check_errors = pygame.init()
@@ -47,10 +47,15 @@ fps_controller = pygame.time.Clock()
 
 
 # Game variables
-snake_pos = [100, 50]
-snake_body = [[100, 50], [100-10, 50], [100-(2*10), 50]]
+snake_box_size = 40
+snake_head = [frame_size_x / 2, frame_size_y / 2]
+snake_body = [
+    [frame_size_x / 2, frame_size_y / 2],
+    [(frame_size_x / 2) - snake_box_size, (frame_size_y / 2)],
+    [(frame_size_x / 2) - 2 * snake_box_size, (frame_size_y / 2)]
+]
 
-food_pos = [random.randrange(1, (frame_size_x//10)) * 10, random.randrange(1, (frame_size_y//10)) * 10]
+food_pos = [random.randrange(1, (frame_size_x//snake_box_size)) * snake_box_size, random.randrange(1, (frame_size_y//snake_box_size)) * snake_box_size]
 food_spawn = True
 
 direction = 'RIGHT'
@@ -120,17 +125,17 @@ while True:
 
     # Moving the snake
     if direction == 'UP':
-        snake_pos[1] -= 10
+        snake_head[1] -= snake_box_size
     if direction == 'DOWN':
-        snake_pos[1] += 10
+        snake_head[1] += snake_box_size
     if direction == 'LEFT':
-        snake_pos[0] -= 10
+        snake_head[0] -= snake_box_size
     if direction == 'RIGHT':
-        snake_pos[0] += 10
+        snake_head[0] += snake_box_size
 
     # Snake body growing mechanism
-    snake_body.insert(0, list(snake_pos))
-    if snake_pos[0] == food_pos[0] and snake_pos[1] == food_pos[1]:
+    snake_body.insert(0, list(snake_head))
+    if snake_head[0] == food_pos[0] and snake_head[1] == food_pos[1]:
         score += 1
         food_spawn = False
     else:
@@ -154,13 +159,13 @@ while True:
 
     # Game Over conditions
     # Getting out of bounds
-    if snake_pos[0] < 0 or snake_pos[0] > frame_size_x-10:
+    if snake_head[0] < 0 or snake_head[0] > frame_size_x-10:
         game_over()
-    if snake_pos[1] < 0 or snake_pos[1] > frame_size_y-10:
+    if snake_head[1] < 0 or snake_head[1] > frame_size_y-10:
         game_over()
     # Touching the snake body
     for block in snake_body[1:]:
-        if snake_pos[0] == block[0] and snake_pos[1] == block[1]:
+        if snake_head[0] == block[0] and snake_head[1] == block[1]:
             game_over()
 
     show_score(1, white, 'consolas', 20)
