@@ -1,9 +1,13 @@
-import random
+import random, math
+import numpy as np
+from Brain import Brain
 
 class Snake:
     def __init__(self):
+        # make sure to change these variables as well if you decide to change the initial window size !!!
         self.frame_size_x = 400
         self.frame_size_y = 400
+
         self.snake_box_size = 10
         self.snake_head = [self.frame_size_x / 2, self.frame_size_y / 2]
         self.snake_body = [
@@ -11,16 +15,21 @@ class Snake:
             [(self.frame_size_x / 2) - self.snake_box_size, (self.frame_size_y / 2)],
             [(self.frame_size_x / 2) - 2 * self.snake_box_size, (self.frame_size_y / 2)]
         ]
-        self.food_pos = [random.randrange(1, (self.frame_size_x//self.snake_box_size)) * self.snake_box_size, random.randrange(1, (self.frame_size_y//self.snake_box_size)) * self.snake_box_size]
+        self.food_pos = [random.randrange(1, (self.frame_size_x // self.snake_box_size)) * self.snake_box_size, random.randrange(1, (self.frame_size_y // self.snake_box_size)) * self.snake_box_size]
         self.food_spawn = True
         self.direction = 'RIGHT'
         self.change_to = self.direction
+        self.brain = Brain(input_size = 4)
         self.score = 0
+        self.moves = 0
+        self.directions = ['UP', 'DOWN', 'LEFT', 'RIGHT']
 
     def move(self):
         """Moves the snake in the direction based on the output from the Brain.
         """
-        change_to = random.choice(['UP', 'DOWN', 'LEFT', 'DOWN'])
+
+        prediction = self.brain.get_movement([self.get_state()])
+        change_to = self.directions[prediction]
 
         if self.is_dead():
             return
@@ -44,6 +53,8 @@ class Snake:
             self.snake_head[0] -= self.snake_box_size
         if self.direction == 'RIGHT':
             self.snake_head[0] += self.snake_box_size
+
+        self.moves+=1
 
     def grow(self):
         """Checks whether the snake ate its apple. If yes, the snake grows accordingly.
@@ -71,4 +82,25 @@ class Snake:
         for block in self.snake_body[1:]:
             if self.snake_head[0] == block[0] and self.snake_head[1] == block[1]:
                 return True
-            
+
+    def calculate_fitness(self):
+        return (2**self.score * self.moves)
+
+    def get_state(self):
+        """Generates the state for each snake. This is needed as input for the NN model
+
+        Returns:
+            [array]: [Represents the current snake state]
+        """
+        X = []
+
+        distance_right_wall = (self.frame_size_x - self.snake_head[0]) / self.frame_size_x
+        distance_left_wall = self.snake_head[0] / self.frame_size_x
+        distance_top_wall = self.snake_head[1] / self.frame_size_y
+        distance_bottom_wall = (self.frame_size_y - self.snake_head[1]) / self.frame_size_y
+
+        # apple_direction_vector = np.array(self.food_pos)-np.array(self.snake_head[0])
+        # snake_direction_vector = np.array(snake_position[0])-np.array(snake_position[1])
+        X = [distance_top_wall, distance_right_wall, distance_bottom_wall, distance_left_wall]
+        return X
+        

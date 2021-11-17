@@ -23,8 +23,7 @@ frame_size_y = 400
 # Checks for errors encountered
 def initialize_environment():
     check_errors = pygame.init()
-    # pygame.init() example output -> (6, 0)
-    # second number in tuple gives number of errors
+
     if check_errors[1] > 0:
         print(f'[!] Had {check_errors[1]} errors when initialising game, exiting...')
         sys.exit(-1)
@@ -47,7 +46,7 @@ blue = pygame.Color(0, 0, 255)
 
 # Genetic algorithm variables
 number_generations = 10
-population_size = 3
+population_size = 50
 
 # Game Over
 def game_over():
@@ -107,13 +106,14 @@ for gen_number in range(number_generations):
 
         game_window.fill(black)
 
+        # Draw each snake
         for snake in population.snakes:
             for pos in snake.snake_body:
                 pygame.draw.rect(game_window, green, pygame.Rect(pos[0], pos[1], snake.snake_box_size, snake.snake_box_size))
-
-        # Snake food
-        for snake in population.snakes:
+            
+            # Draw food for each snake
             pygame.draw.rect(game_window, white, pygame.Rect(snake.food_pos[0], snake.food_pos[1], snake.snake_box_size, snake.snake_box_size))
+
 
         if population.is_dead():
             break

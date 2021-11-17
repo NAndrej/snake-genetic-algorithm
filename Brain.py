@@ -3,6 +3,7 @@ from keras.models import Sequential
 from keras.layers import Dense, Input
 from keras.optimizers import SGD
 from keras.constraints import maxnorm
+import tensorflow.keras.backend as K
 import numpy as np, os
 
 os.environ['TF_CPP_MIN_VLOG_LEVEL'] = '3'
@@ -23,14 +24,13 @@ class Brain:
         """
         self.model = Sequential([
             Dense(self.input_size, activation = "relu", input_shape=(self.input_size,)),
-            Dense(self.hidden_layer_size, activation = "relu"),
             Dense(self.output_size, activation = "sigmoid")
         ])
     
         sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
         self.model.compile(optimizer=sgd, loss = "mse", metrics = ["accuracy"])
         self.model.build()
-        
+
     def set_weights(self, weights):
         """Sets the model weights to the given ones
 
@@ -59,9 +59,11 @@ class Brain:
         """
 
         # TODO: Please define which integer output maps to which string direction
-        prediction = np.argmax(self.model.predict(X), axis=-1)[0]
+        # X = K.constant(X)
+        prediction = np.argmax(self.model.predict(X, batch_size=len(X)), axis=-1)[0]
+        # prediction = self.model(X)
         return prediction
-        
+
     def get_weights(self):
         """Gets the weights from the model
 
