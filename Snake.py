@@ -82,9 +82,6 @@ class Snake:
     
     def check_collision(self):
         """Executes the needed checks to see if the snake has collided to the borders or itself.
-            
-        Returns:
-            [bool]: [Has the snake collided at this frame?]
         """
         if (self.snake_head[0] < 0 or self.snake_head[0] > self.frame_size_x - self.snake_box_size) or (self.snake_head[1] < 0 or self.snake_head[1] > self.frame_size_y - self.snake_box_size):
             self.moving = False
