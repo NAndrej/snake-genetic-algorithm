@@ -3,7 +3,6 @@ from keras.models import Sequential
 from keras.layers import Dense, Input
 from keras.optimizers import SGD
 from keras.constraints import maxnorm
-import tensorflow.keras.backend as K
 import numpy as np, os
 
 os.environ['TF_CPP_MIN_VLOG_LEVEL'] = '3'
@@ -59,9 +58,11 @@ class Brain:
         """
 
         # TODO: Please define which integer output maps to which string direction
-        # X = K.constant(X)
-        prediction = np.argmax(self.model.predict(X, batch_size=len(X)), axis=-1)[0]
-        # prediction = self.model(X)
+
+        X = np.asarray(X)
+        X = np.atleast_2d(X)
+        prediction = np.argmax(self.model(X), axis=-1)[0]
+
         return prediction
 
     def get_weights(self):

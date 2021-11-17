@@ -46,7 +46,8 @@ blue = pygame.Color(0, 0, 255)
 
 # Genetic algorithm variables
 number_generations = 10
-population_size = 50
+population_size = 5
+selection_rate = 0.5
 
 # Game Over
 def game_over():
@@ -91,11 +92,13 @@ def show_text(choice, color, font, size, score, generation_number):
 
     # pygame.display.flip()
 
-
+population = Population(
+   population_size = population_size,
+   selection_size = int(selection_rate * population_size)
+)
 # Main logic
 for gen_number in range(number_generations):
     initialize_environment()
-    population = Population(population_size)
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -114,11 +117,11 @@ for gen_number in range(number_generations):
             # Draw food for each snake
             pygame.draw.rect(game_window, white, pygame.Rect(snake.food_pos[0], snake.food_pos[1], snake.snake_box_size, snake.snake_box_size))
 
-
         if population.is_dead():
+            population = population.generate_new_population()
             break
 
-        show_text(1, white, 'consolas', 20, max([snake.score for snake in population.snakes]), gen_number)
+        show_text(1, white, 'consolas', 20, max([snake.calculate_fitness() for snake in population.snakes]), gen_number)
         # Refresh game screen
         pygame.display.update()
         # Refresh rate

@@ -5,9 +5,9 @@ from Brain import Brain
 class Snake:
     def __init__(self):
         # make sure to change these variables as well if you decide to change the initial window size !!!
+
         self.frame_size_x = 400
         self.frame_size_y = 400
-
         self.snake_box_size = 10
         self.snake_head = [self.frame_size_x / 2, self.frame_size_y / 2]
         self.snake_body = [
@@ -18,6 +18,7 @@ class Snake:
         self.food_pos = [random.randrange(1, (self.frame_size_x // self.snake_box_size)) * self.snake_box_size, random.randrange(1, (self.frame_size_y // self.snake_box_size)) * self.snake_box_size]
         self.food_spawn = True
         self.direction = 'RIGHT'
+        self.moving = True
         self.change_to = self.direction
         self.brain = Brain(input_size = 4)
         self.score = 0
@@ -72,18 +73,31 @@ class Snake:
         self.food_spawn = True
 
     def is_dead(self):
-        """Checks whether the snake is dead or not.
+        """Self-explanatory.
 
         Returns:
-            bool: [Is this snake dead?]
+            [bool]: [Is this snake dead?]
+        """
+        return not self.moving
+    
+    def check_collision(self):
+        """Executes the needed checks to see if the snake has collided to the borders or itself.
+            
+        Returns:
+            [bool]: [Has the snake collided at this frame?]
         """
         if (self.snake_head[0] < 0 or self.snake_head[0] > self.frame_size_x - self.snake_box_size) or (self.snake_head[1] < 0 or self.snake_head[1] > self.frame_size_y - self.snake_box_size):
-            return True
+            self.moving = False
         for block in self.snake_body[1:]:
             if self.snake_head[0] == block[0] and self.snake_head[1] == block[1]:
-                return True
+                self.moving = False
 
     def calculate_fitness(self):
+        """Calculates fitness value for the current snake unit. Gives more attention to apples eaten.
+
+        Returns:
+            [int]: [Fitness value]
+        """
         return (2**self.score * self.moves)
 
     def get_state(self):
@@ -103,4 +117,14 @@ class Snake:
         # snake_direction_vector = np.array(snake_position[0])-np.array(snake_position[1])
         X = [distance_top_wall, distance_right_wall, distance_bottom_wall, distance_left_wall]
         return X
-        
+    
+    def check_infinite_loop(self):
+        """Won't allow a snake to enter an infinite loop, they all have expire date
+        """
+        if self.get_fitness() >= 200 * (self.score + 1):
+            self.kill()
+    
+    def kill(self):
+        """Kills the current snake
+        """
+        self.moving = False
