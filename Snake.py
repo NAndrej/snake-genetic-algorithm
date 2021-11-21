@@ -9,18 +9,14 @@ class Snake:
         self.frame_size_x = 400
         self.frame_size_y = 400
         self.snake_box_size = 10
-        self.snake_head = [self.frame_size_x / 2, self.frame_size_y / 2]
-        self.snake_body = [
-            [self.frame_size_x / 2, self.frame_size_y / 2],
-            [(self.frame_size_x / 2) - self.snake_box_size, (self.frame_size_y / 2)],
-            [(self.frame_size_x / 2) - 2 * self.snake_box_size, (self.frame_size_y / 2)]
-        ]
+        self.snake_head = self.get_initial_snake_head()
+        self.snake_body = self.get_initial_snake_body()
         self.food_pos = [random.randrange(1, (self.frame_size_x // self.snake_box_size)) * self.snake_box_size, random.randrange(1, (self.frame_size_y // self.snake_box_size)) * self.snake_box_size]
         self.food_spawn = True
         self.direction = 'RIGHT'
         self.moving = True
         self.change_to = self.direction
-        self.brain = Brain(input_size = 4)
+        self.brain = Brain(input_size = 8)
         self.score = 0
         self.moves = 0
         self.directions = ['UP', 'DOWN', 'LEFT', 'RIGHT']
@@ -97,6 +93,55 @@ class Snake:
         """
         return (2**self.score * self.moves)
 
+    def get_apple_relative_position(self):
+        """Generates a list that represents where the apple is, relative to the snake direction. This is used for the state
+
+        Returns:
+            [array]: [Array of boolean values]
+        """
+        # apple right
+        if self.direction == "UP":
+            apple_right = self.food_pos[0] - self.snake_head[0] > 0 
+        if self.direction == "DOWN":
+            apple_right = self.snake_head[0] - self.food_pos[0] > 0 
+        if self.direction == "RIGHT":
+            apple_right = self.food_pos[1] - self.snake_head[1] > 0 
+        if self.direction == "LEFT":
+            apple_right = self.snake_head[1] - self.food_pos[1] > 0 
+
+        # apple left
+        if self.direction == "UP":
+            apple_left = self.snake_head[0] - self.food_pos[0] > 0 
+        if self.direction == "DOWN":
+            apple_left = self.food_pos[0] - self.snake_head[0] > 0 
+        if self.direction == "RIGHT":
+            apple_left = self.snake_head[1] - self.food_pos[1] > 0 
+        if self.direction == "LEFT":
+            apple_left = self.food_pos[1] - self.snake_head[1] > 0 
+
+
+        # apple back
+        if self.direction == "UP":
+            apple_back = self.food_pos[1] - self.snake_head[1] > 0 
+        if self.direction == "DOWN":
+            apple_back = self.snake_head[1] - self.food_pos[1] > 0 
+        if self.direction == "RIGHT":
+            apple_back = self.snake_head[0] - self.food_pos[0] > 0 
+        if self.direction == "LEFT":
+            apple_back = self.food_pos[0] - self.snake_head[0] > 0 
+
+        # apple front
+        if self.direction == "UP":
+            apple_front = self.snake_head[1] - self.food_pos[0] > 0 
+        if self.direction == "DOWN":
+            apple_front = self.food_pos[1] - self.snake_head[1] > 0 
+        if self.direction == "RIGHT":
+            apple_front = self.food_pos[0] - self.snake_head[0] > 0 
+        if self.direction == "LEFT":
+            apple_front = self.snake_head[0] - self.food_pos[0] > 0 
+
+        return [apple_front, apple_back, apple_right, apple_left]
+
     def get_state(self):
         """Generates the state for each snake. This is needed as input for the NN model
 
@@ -113,15 +158,35 @@ class Snake:
         # apple_direction_vector = np.array(self.food_pos)-np.array(self.snake_head[0])
         # snake_direction_vector = np.array(snake_position[0])-np.array(snake_position[1])
         X = [distance_top_wall, distance_right_wall, distance_bottom_wall, distance_left_wall]
+        apple_position = self.get_apple_relative_position()
+        X = X + apple_position
         return X
     
     def check_infinite_loop(self):
         """Won't allow a snake to enter an infinite loop, they all have expire date
         """
-        if self.get_fitness() >= 200 * (self.score + 1):
+        if self.calculate_fitness() >= 300 * (self.score + 1):
             self.kill()
     
     def kill(self):
         """Kills the current snake
         """
         self.moving = False
+
+    def get_initial_snake_head(self):
+        """Gets initial snake head position
+        """
+        self.snake_head = [self.frame_size_x / 2, self.frame_size_y / 2]
+
+        return self.snake_head
+    
+    def get_initial_snake_body(self):
+        """Gets initial snake body position
+        """
+        self.snake_body = [
+            [self.frame_size_x / 2, self.frame_size_y / 2],
+            [(self.frame_size_x / 2) - self.snake_box_size, (self.frame_size_y / 2)],
+            [(self.frame_size_x / 2) - 2 * self.snake_box_size, (self.frame_size_y / 2)]
+        ]
+
+        return self.snake_body  
