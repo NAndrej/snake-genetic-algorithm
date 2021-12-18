@@ -1,7 +1,7 @@
 import keras
 from keras.models import Sequential
 from keras.layers import Dense, Input
-from keras.optimizers import SGD
+from keras.optimizers import SGD, Adam
 from keras.constraints import maxnorm
 import numpy as np, os
 
@@ -10,25 +10,29 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 class Brain:
 
-    def __init__(self, input_size = 5, 
-                output_size = 4, 
-                hidden_layer_size = 5):
+    def __init__(self, input_size, output_size, hidden_layer_size, single_model = None):
         self.input_size = input_size
         self.output_size = output_size
         self.hidden_layer_size = hidden_layer_size
-        self.build_model()
+        self.build_model(single_model)
 
-    def build_model(self):
+    def build_model(self, single_model):
         """Builds the model for generating directions
         """
+        if single_model:
+            self.model = keras.models.load_model(f"models/{single_model}")
+            return
+        
         self.model = Sequential([
-            Dense(self.input_size, activation = "relu", input_shape=(self.input_size,)),
+            Dense(self.input_size, activation = "sigmoid", input_shape=(self.input_size,)),
             Dense(self.output_size, activation = "sigmoid")
         ])
     
         sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
-        self.model.compile(optimizer=sgd, loss = "mse", metrics = ["accuracy"])
-        self.model.build()
+        self.model.compile(loss="mse", optimizer=sgd, metrics=["accuracy"])
+
+        # self.model.compile(optimizer=opt, loss = "mse", metrics = ["accuracy"])
+        # self.model.build()
 
     def set_weights(self, weights):
         """Sets the model weights to the given ones

@@ -1,11 +1,12 @@
-"""
-Snake Eater
-Made with PyGame
-"""
-
 import pygame, sys, time, random
 from Brain import Brain
 from Population import Population
+import argparse
+
+parser = argparse.ArgumentParser(description='A test program.')
+
+parser.add_argument("--single_model", help="Runs the passed model from models folder. Used to play a single neural network", default=None)
+args = parser.parse_args()
 
 # Difficulty settings
 # Easy      ->  10
@@ -13,7 +14,7 @@ from Population import Population
 # Hard      ->  40
 # Harder    ->  60
 # Impossible->  120
-difficulty = 25
+difficulty = 20
 
 # Window size
 frame_size_x = 400
@@ -46,8 +47,8 @@ blue = pygame.Color(0, 0, 255)
 
 # Genetic algorithm variables
 number_generations = 100000
-population_size = 100
-selection_rate = 0.02
+population_size = 1 if args.single_model else 100
+selection_rate = 0.1
 
 # Game Over
 def game_over():
@@ -94,7 +95,8 @@ def show_text(choice, color, font, size, score, generation_number):
 
 population = Population(
    population_size = population_size,
-   selection_size = int(selection_rate * population_size)
+   selection_size = int(selection_rate * population_size),
+   single_model = args.single_model
 )
 # Main logic
 for gen_number in range(number_generations):
@@ -108,21 +110,27 @@ for gen_number in range(number_generations):
         population.exec_snake_functions()
 
         game_window.fill(black)
-
+        
         # Draw each snake
         for snake in population.snakes:
             for pos in snake.snake_body:
-                pygame.draw.rect(game_window, green, pygame.Rect(pos[0], pos[1], snake.snake_box_size, snake.snake_box_size))
+                pygame.draw.rect(game_window, snake.color, pygame.Rect(pos[0], pos[1], snake.snake_box_size, snake.snake_box_size))
             
             # Draw food for each snake
             if not snake.is_dead():
                 pygame.draw.rect(game_window, white, pygame.Rect(snake.food_pos[0], snake.food_pos[1], snake.snake_box_size, snake.snake_box_size))
 
+        best_snake = population.calculate_fitness()[-1]
+        best_unit_fitness = best_snake[0]
+        best_unit_object = best_snake[1]
         if population.is_dead():
             population = population.generate_new_population()
+            # Save the best unit
+            if (gen_number % 50 == 0):
+                best_unit_object.brain.model.save('models/best_unit_' + str(gen_number))
             break
 
-        show_text(1, white, 'consolas', 20, max([snake.calculate_fitness() for snake in population.snakes]), gen_number)
+        show_text(1, white, 'consolas', 20, best_unit_fitness, gen_number)
         # Refresh game screen
         pygame.display.update()
         # Refresh rate

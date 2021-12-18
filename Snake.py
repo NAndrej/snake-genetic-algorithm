@@ -1,25 +1,31 @@
 import random, math
 import numpy as np
 from Brain import Brain
+import pygame
 
 class Snake:
-    def __init__(self):
+    def __init__(self, color = pygame.Color(0, 255, 0), single_model = None):
         # make sure to change these variables as well if you decide to change the initial window size !!!
 
         self.frame_size_x = 400
         self.frame_size_y = 400
-        self.snake_box_size = 10
-        self.snake_head = self.get_initial_snake_head()
-        self.snake_body = self.get_initial_snake_body()
+        self.snake_box_size = 20
+        self.snake_head = [self.frame_size_x / 2, self.frame_size_y / 2]
+        self.snake_body = [
+            [self.frame_size_x / 2, self.frame_size_y / 2],
+            [(self.frame_size_x / 2) - self.snake_box_size, (self.frame_size_y / 2)],
+            [(self.frame_size_x / 2) - 2 * self.snake_box_size, (self.frame_size_y / 2)]
+        ]
         self.food_pos = [random.randrange(1, (self.frame_size_x // self.snake_box_size)) * self.snake_box_size, random.randrange(1, (self.frame_size_y // self.snake_box_size)) * self.snake_box_size]
         self.food_spawn = True
         self.direction = 'RIGHT'
         self.moving = True
         self.change_to = self.direction
-        self.brain = Brain(input_size = 8)
+        self.brain = Brain(input_size=12, output_size=4, hidden_layer_size=16, single_model=single_model)
         self.score = 0
         self.moves = 0
         self.directions = ['UP', 'DOWN', 'LEFT', 'RIGHT']
+        self.color = color
 
     def move(self):
         """Moves the snake in the direction based on the output from the Brain.
@@ -140,6 +146,11 @@ class Snake:
         if self.direction == "LEFT":
             apple_front = self.snake_head[0] - self.food_pos[0] > 0 
 
+        apple_front = 1 if apple_front else 0
+        apple_back = 1 if apple_back else 0
+        apple_right = 1 if apple_right else 0
+        apple_left = 1 if apple_left else 0
+
         return [apple_front, apple_back, apple_right, apple_left]
 
     def get_state(self):
@@ -158,14 +169,17 @@ class Snake:
         # apple_direction_vector = np.array(self.food_pos)-np.array(self.snake_head[0])
         # snake_direction_vector = np.array(snake_position[0])-np.array(snake_position[1])
         X = [distance_top_wall, distance_right_wall, distance_bottom_wall, distance_left_wall]
+    
         apple_position = self.get_apple_relative_position()
-        X = X + apple_position
+        snake_direction = [1 if self.direction == "RIGHT" else 0, 1 if self.direction == "LEFT" else 0, 1 if self.direction == "UP" else 0, 1 if self.direction == "DOWN" else 0]
+
+        X = X + apple_position + snake_direction
         return X
     
     def check_infinite_loop(self):
         """Won't allow a snake to enter an infinite loop, they all have expire date
         """
-        if self.calculate_fitness() >= 300 * (self.score + 1):
+        if self.calculate_fitness() >= 200 * (self.score + 1):
             self.kill()
     
     def kill(self):
@@ -173,20 +187,23 @@ class Snake:
         """
         self.moving = False
 
-    def get_initial_snake_head(self):
-        """Gets initial snake head position
+    def reset_unit(self):
+        """Resets the snake dead state and initial positions so they can go in the next generation
         """
-        self.snake_head = [self.frame_size_x / 2, self.frame_size_y / 2]
-
-        return self.snake_head
-    
-    def get_initial_snake_body(self):
-        """Gets initial snake body position
-        """
+        self.moving = True
+        self.food_spawn = True
         self.snake_body = [
             [self.frame_size_x / 2, self.frame_size_y / 2],
             [(self.frame_size_x / 2) - self.snake_box_size, (self.frame_size_y / 2)],
             [(self.frame_size_x / 2) - 2 * self.snake_box_size, (self.frame_size_y / 2)]
         ]
-
-        return self.snake_body  
+        self.snake_head = [self.frame_size_x / 2, self.frame_size_y / 2]
+        self.food_pos = [random.randrange(1, (self.frame_size_x // self.snake_box_size)) * self.snake_box_size, random.randrange(1, (self.frame_size_y // self.snake_box_size)) * self.snake_box_size]
+        self.direction = "RIGHT"
+        self.change_to = self.direction
+        self.score = 0
+        self.moves = 0
+        self.color = pygame.Color(0, 255, 0)
+    
+    def __str__(self):
+        return f"Fitness: {self.calculate_fitness()}"

@@ -1,13 +1,16 @@
 from Snake import Snake
 import numpy as np
 import random
+import pygame
+import keras
 
 class Population:
-    def __init__(self, population_size, selection_size):
+    def __init__(self, population_size, selection_size, single_model):
         self.population_size = population_size
         self.selection_size = selection_size
-        self.snakes = [Snake() for i in range(self.population_size)]
-        self.MUTATION_PROBABILITY = 0.1
+        self.single_model = single_model
+        self.snakes = [Snake(single_model=single_model) for i in range(self.population_size)]
+        self.MUTATION_PROBABILITY = 0.01
     
     def exec_snake_functions(self):
         """Executes snake functions that are needed in every frame
@@ -35,17 +38,16 @@ class Population:
         top_performers = self.get_strongest_parents()
         children = self.crossover(top_performers)
         children = self.mutate(children)
-        # TODO: Change this to the new generated snakes
 
         fitness_values = self.calculate_fitness()
 
         self.snakes = []
         for unit in fitness_values[self.selection_size:]:
-            self.snakes.append(Snake())
-
-        # self.snakes = [unit[1] for unit in fitness_values[self.selection_size:]]
+            unit[1].reset_unit()
+            self.snakes.append(unit[1])
 
         for c in children:
+            c.color = pygame.Color(255, 0, 0)
             self.snakes.append(c)
 
         return self
@@ -68,43 +70,49 @@ class Population:
         return [unit[1] for unit in fitness_values[-self.selection_size:]]
 
     def crossover(self, parents):
-        """Executes crossover. The weights of the selecte top performers of the current population are being mixed up\
+        """Executes crossover. The weights of the selected top performers of the current population are being mixed up\
         to generate new more powerful units. 
 
         Returns:
             [Snake[]]: [A list containing the generated units]
         """
-        # new_units = [Snake() for i in range(self.selection_size)]
+        if self.single_model:
+            return parents
 
-        #TODO: take the self.selection_size best units, and generate that much children
-        # For each children, take 2 of the selected top performers and perform a crossover\
-        # Assign the crossover result for the current children, and do the same thing for each new children
-        # Mutate the generated selection_size units
-        # Filter out selection_size units form the old population
-        # Add the new mutated units to continue for the new population
+        # TODO: Make this on layer level - the crossover should be performed on a layer level independently between layers.
+        children = [Snake() for i in range(self.selection_size)]
 
-        child1, child2 = Snake(), Snake()
+        for child in children:
+            random_parents = random.choices(parents, weights = [i for i in range(1, self.selection_size + 1, 1)], k = 2)
+            
+            parent1_weights = random_parents[0].brain.get_weights()
+            parent2_weights = random_parents[1].brain.get_weights()
 
-        parent1_weights = parents[0].brain.get_weights()
-        parent2_weights = parents[1].brain.get_weights()
+            current_child_weights = []
 
-        child1_weights = []
-        child2_weights = []
+            for i in range(len(parents[0].brain.model.layers)):
+                parent1_current_weights = np.array(parent1_weights[i]).flatten().tolist()
+                parent2_current_weights = np.array(parent2_weights[i]).flatten().tolist()
 
-        for i in range(len(parents[0].brain.model.layers)):
-            parent1_current_weights = np.array(parent1_weights[i]).flatten().tolist()
-            parent2_current_weights = np.array(parent2_weights[i]).flatten().tolist()
+                chromosome_length = len(parent1_current_weights)
+                random_point_1 = random.randint(0, chromosome_length) 
+                random_point_2 = random.randint(random_point_1, chromosome_length)
 
-            chromosome_length = len(parent1_current_weights)
-            random_point_1 = random.randint(0, chromosome_length) 
-            random_point_2 = random.randint(random_point_1, chromosome_length)
+                current_child_weights.append(np.array(parent1_current_weights[0:random_point_1] + parent2_current_weights[random_point_1:random_point_2] + parent1_current_weights[random_point_2:]))
 
-            child1_weights.append(np.array(parent1_current_weights[0:random_point_1] + parent2_current_weights[random_point_1:random_point_2] + parent1_current_weights[random_point_2:]))
-            child2_weights.append(np.array(parent2_current_weights[0:random_point_1] + parent1_current_weights[random_point_1:random_point_2] + parent2_current_weights[random_point_2:]))
 
-        child1.brain.set_weights(child1_weights)
-        child2.brain.set_weights(child2_weights)
-        return child1, child2
+
+            # print('PARENT 1 WEIGHTS -----------')
+            # print(random_parents[0].brain.get_weights())
+            # print('PARENT 2 WEIGHTS -----------')
+            # print(random_parents[1].brain.get_weights())
+            # print('OLD CHILD WEIGHTS-----------')
+            # print(child.brain.get_weights())
+            child.brain.set_weights(current_child_weights)
+            # print('NEW CHILD WEIGHTS -----------')
+            # print(child.brain.get_weights())
+            # exit()
+        return children
 
     def mutate(self, children):
         """Executes mutation. A random element is being added to the generated units in order to reach unseen states.
@@ -115,6 +123,9 @@ class Population:
         Returns:
             [Snake[]]: [Mutated units]
         """
+        if self.single_model:
+            return children
+
         new_children = []
         for child in children:
             child_weights = child.brain.get_weights()
@@ -123,12 +134,22 @@ class Population:
                 layer_weights = layer_weights.flatten().tolist()
                 new_weights = []
                 for weight in layer_weights:
-                    if random.random() < self.MUTATION_PROBABILITY:
-                        new_weight = random.uniform(-1, 1)
+                    if random.random() <= self.MUTATION_PROBABILITY:
+                        new_weight = random.uniform(-1, 1)      
                         new_weights.append(new_weight)
                     else:
                         new_weights.append(weight)
                 mutated_weights.append(new_weights)
+
             child.brain.set_weights(mutated_weights)
             new_children.append(child)
+
         return new_children
+
+    def get_best_unit(self):
+        """Returns the current's population best unit coupled with its fitness score
+
+        Returns:
+            [tuple]: Tuple (Snake, fitness_score)
+        """
+        max([snake.calculate_fitness() for snake in population.snakes])
