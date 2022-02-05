@@ -21,7 +21,7 @@ class Snake:
         self.direction = 'RIGHT'
         self.moving = True
         self.change_to = self.direction
-        self.brain = Brain(input_size=12, output_size=4, hidden_layer_size=6, single_model=single_model)
+        self.brain = Brain(input_size=9, output_size=4, hidden_layer_size=6, single_model=single_model)
         self.score = 0
         self.moves = 0
         self.directions = ['UP', 'DOWN', 'LEFT', 'RIGHT']
@@ -169,11 +169,12 @@ class Snake:
 
         X = [distance_top_wall, distance_right_wall, distance_bottom_wall, distance_left_wall]
 
-        # apple_position = math.atan2(self.food_pos[1] - self.snake_head[1], self.food_pos[0] - self.snake_head[1])
-        apple_position = self.get_apple_relative_position()
+        apple_position = math.atan2(self.food_pos[1] - self.snake_head[1], self.food_pos[0] - self.snake_head[1]) / math.pi + 0.5
+        # apple_position = self.get_apple_relative_position()
         snake_direction = [1 if self.direction == "RIGHT" else 0, 1 if self.direction == "LEFT" else 0, 1 if self.direction == "UP" else 0, 1 if self.direction == "DOWN" else 0]
 
-        X = X + snake_direction + apple_position
+        X = X + snake_direction
+        X.append(apple_position)
 
         return X
     

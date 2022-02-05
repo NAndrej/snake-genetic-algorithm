@@ -10,7 +10,7 @@ class Population:
         self.selection_size = selection_size
         self.single_model = single_model
         self.snakes = [Snake(single_model=single_model) for i in range(self.population_size)]
-        self.MUTATION_PROBABILITY = 0.05
+        self.MUTATION_PROBABILITY = 0.1
     
     def exec_snake_functions(self):
         """Executes snake functions that are needed in every frame
